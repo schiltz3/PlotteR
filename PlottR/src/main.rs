@@ -1,4 +1,6 @@
-extern crate csv;
+#![forbid(unsafe_code)]
+#![cfg_attr(not(debug_assertions), deny(warnings))] // Forbid warnings in release builds
+#![warn(clippy::all, rust_2018_idioms)]
 
 use std::ffi::OsString;
 use std::fs::File;
@@ -12,11 +14,11 @@ struct Column {
     header: String,
     column: Vec<f64>,
 }
+
 fn run() -> Result<()> {
     parse_columns()?;
     Ok(())
 }
-
 
 fn parse_columns() -> Result<Vec<Column>> {
     let file_path = get_first_arg()?;
@@ -49,9 +51,13 @@ fn get_first_arg() -> Result<OsString> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn main() {
     if let Err(err) = run() {
         println!("{}", err);
         process::exit(1);
     }
+    let app = plottr::TemplateApp::default();
+    let native_options = eframe::NativeOptions::default();
+    eframe::run_native(Box::new(app), native_options);
 }
