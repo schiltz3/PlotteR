@@ -19,9 +19,10 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: actions-rs/cargo@v1
+      - uses: MarcoPolo/cargo@a527bf4d534717ff4424a84446c5d710f8833139
         with:
           command: check
+          working-directory: plottr
           args: --all-features
 
   check_wasm:
@@ -35,9 +36,10 @@ jobs:
           toolchain: stable
           override: true
       - run: rustup target add wasm32-unknown-unknown
-      - uses: actions-rs/cargo@v1
+      - uses: MarcoPolo/cargo@a527bf4d534717ff4424a84446c5d710f8833139
         with:
           command: check
+          working-directory: plottr
           args: --all-features --lib --target wasm32-unknown-unknown
 
   test:
@@ -51,9 +53,10 @@ jobs:
           toolchain: stable
           override: true
       - run: sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libssl-dev
-      - uses: actions-rs/cargo@v1
+      - uses: MarcoPolo/cargo@a527bf4d534717ff4424a84446c5d710f8833139
         with:
           command: test
+          working-directory: plottr
           args: --lib
 
   fmt:
@@ -67,9 +70,10 @@ jobs:
           toolchain: stable
           override: true
       - run: rustup component add rustfmt
-      - uses: actions-rs/cargo@v1
+      - uses: MarcoPolo/cargo@a527bf4d534717ff4424a84446c5d710f8833139
         with:
           command: fmt
+          working-directory: plottr
           args: --all -- --check
 
   clippy:
@@ -83,7 +87,8 @@ jobs:
           toolchain: stable
           override: true
       - run: rustup component add clippy
-      - uses: actions-rs/cargo@v1
+      - uses: MarcoPolo/cargo@a527bf4d534717ff4424a84446c5d710f8833139
         with:
           command: clippy
+          working-directory: plottr
           args: -- -D warnings
