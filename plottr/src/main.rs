@@ -2,12 +2,13 @@
 #![cfg_attr(not(debug_assertions), deny(warnings))] // Forbid warnings in release builds
 #![warn(clippy::all, rust_2018_idioms)]
 
+use anyhow::{anyhow, Result};
+use native_dialog::{FileDialog, MessageDialog, MessageType};
 use std::ffi::OsString;
 use std::fs::File;
+use std::path::PathBuf;
 use std::process;
 use std::{env, vec};
-
-use anyhow::{anyhow, Result};
 
 #[derive(Debug)]
 struct Column {
@@ -16,12 +17,11 @@ struct Column {
 }
 
 fn run() -> Result<()> {
-    parse_columns()?;
+    //parse_columns(path)?;
     Ok(())
 }
 
-fn parse_columns() -> Result<Vec<Column>> {
-    let file_path = get_first_arg()?;
+fn parse_columns(file_path: PathBuf) -> Result<Vec<Column>> {
     let file = File::open(file_path)?;
     let mut rdr = csv::ReaderBuilder::new()
         .has_headers(true)

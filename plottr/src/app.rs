@@ -1,4 +1,6 @@
 use eframe::{egui, epi};
+use native_dialog::{FileDialog, MessageDialog, MessageType};
+use std::path::PathBuf;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
@@ -6,6 +8,7 @@ use eframe::{egui, epi};
 pub struct TemplateApp {
     // Example stuff:
     label: String,
+    path: Option<PathBuf>,
 
     // this how you opt-out of serialization of a member
     #[cfg_attr(feature = "persistence", serde(skip))]
@@ -18,6 +21,7 @@ impl Default for TemplateApp {
             // Example stuff:
             label: "Hello World!".to_owned(),
             value: 2.7,
+            path: None,
         }
     }
 }
@@ -52,7 +56,7 @@ impl epi::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
-        let Self { label, value } = self;
+        let Self { label, value, path } = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -71,11 +75,29 @@ impl epi::App for TemplateApp {
         });
 
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            ui.heading("Side Panel");
+            ui.heading("File");
 
             ui.horizontal(|ui| {
                 ui.label("Write something: ");
                 ui.text_edit_singleline(label);
+            });
+
+            ui.horizontal(|ui| {
+                if ui.button("Open File").clicked() {
+                    *path = FileDialog::new()
+                        .add_filter("CSV", &["csv"])
+                        .add_filter("TXT", &["txt"])
+                        .add_filter("All", &["*"])
+                        .show_open_single_file()
+                        .unwrap();
+                }
+                match path {
+                    Some(path) => {
+                        let filename = path.file_name().unwrap().to_str().unwrap();
+                        ui.label(filename);
+                    }
+                    None => return,
+                };
             });
 
             ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
