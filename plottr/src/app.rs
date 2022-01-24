@@ -1,5 +1,8 @@
+use crate::csv_util::{parse_columns, Column, PivotIter};
+use core::result::Iter;
 use eframe::{egui, epi};
-use native_dialog::{FileDialog, MessageDialog, MessageType};
+use itertools::izip;
+use native_dialog::FileDialog;
 use std::path::PathBuf;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -13,6 +16,7 @@ pub struct TemplateApp {
     // this how you opt-out of serialization of a member
     #[cfg_attr(feature = "persistence", serde(skip))]
     value: f32,
+    table: Option<Vec<Column>>,
 }
 
 impl Default for TemplateApp {
@@ -22,6 +26,7 @@ impl Default for TemplateApp {
             label: "Hello World!".to_owned(),
             value: 2.7,
             path: None,
+            table: None,
         }
     }
 }
@@ -56,7 +61,12 @@ impl epi::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
-        let Self { label, value, path } = self;
+        let Self {
+            label,
+            value,
+            path,
+            table,
+        } = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -67,37 +77,41 @@ impl epi::App for TemplateApp {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
-                    if ui.button("Quit").clicked() {
-                        frame.quit();
+                    // if ui.button("Quit").clicked() {
+                    //     frame.quit();
+                    // }
+                    if ui.button("Open").clicked() {
+                        *path = FileDialog::new()
+                            .add_filter("CSV", &["csv"])
+                            .add_filter("TXT", &["txt"])
+                            .add_filter("All", &["*"])
+                            .show_open_single_file()
+                            .unwrap();
                     }
+                    match path {
+                        Some(path) => {
+                            *table = Some(parse_columns(path.to_path_buf()).unwrap());
+                        }
+                        None => return,
+                    };
                 });
             });
         });
 
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            ui.heading("File");
+            match path {
+                Some(path) => {
+                    let filename = path.file_name().unwrap().to_str().unwrap();
+                    ui.heading(filename);
+                }
+                None => {
+                    ui.heading("");
+                }
+            };
 
             ui.horizontal(|ui| {
                 ui.label("Write something: ");
                 ui.text_edit_singleline(label);
-            });
-
-            ui.horizontal(|ui| {
-                if ui.button("Open File").clicked() {
-                    *path = FileDialog::new()
-                        .add_filter("CSV", &["csv"])
-                        .add_filter("TXT", &["txt"])
-                        .add_filter("All", &["*"])
-                        .show_open_single_file()
-                        .unwrap();
-                }
-                match path {
-                    Some(path) => {
-                        let filename = path.file_name().unwrap().to_str().unwrap();
-                        ui.label(filename);
-                    }
-                    None => return,
-                };
             });
 
             ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
@@ -119,12 +133,52 @@ impl epi::App for TemplateApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
 
-            ui.heading("eframe template");
-            ui.hyperlink("https://github.com/emilk/eframe_template");
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
+            ui.heading("File Contents");
+
+            let text_style = egui::TextStyle::Body;
+            let row_height = ui.fonts()[text_style].row_height();
+            let num_rows = match table {
+                Some(table) => table.len(),
+                None => 0,
+            };
+            egui::ScrollArea::vertical()
+                .auto_shrink([false; 2])
+                .stick_to_right()
+                .show(ui, |ui| {
+                    let mut text = String::new();
+                    match table {
+                        Some(table) => {
+                            for column in table.iter() {
+                                text.push_str(&column.header);
+                                text.push(',');
+                            }
+                            text.pop();
+                            ui.label(text);
+                            //let mut table_local
+                            let column_iter =
+                                PivotIter(table.iter().map(|x| x.column.iter()).collect());
+                            for row in column_iter {
+                                let mut txt = String::new();
+                                for column in row {
+                                    txt.push_str(&column.to_string());
+                                    txt.push_str(",");
+                                }
+                                txt.pop();
+                                ui.label(txt);
+                            }
+                        }
+
+                        None => return,
+                    }
+
+                    //let zipper: Vec<_> = (0..).zip(table).collect();
+                    //println!("{:?}", zipper);
+
+                    //for column in table.iter() {
+                    //    rows = column.zip()
+                    //}
+                });
+
             egui::warn_if_debug_build(ui);
         });
 
