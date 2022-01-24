@@ -1,7 +1,7 @@
 use crate::csv_util::{parse_columns, Column, PivotIter};
-use core::result::Iter;
+
 use eframe::{egui, epi};
-use itertools::izip;
+
 use native_dialog::FileDialog;
 use std::path::PathBuf;
 
@@ -60,7 +60,7 @@ impl epi::App for TemplateApp {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
-    fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
+    fn update(&mut self, ctx: &egui::CtxRef, _frame: &epi::Frame) {
         let Self {
             label,
             value,
@@ -135,12 +135,6 @@ impl epi::App for TemplateApp {
 
             ui.heading("File Contents");
 
-            let text_style = egui::TextStyle::Body;
-            let row_height = ui.fonts()[text_style].row_height();
-            let num_rows = match table {
-                Some(table) => table.len(),
-                None => 0,
-            };
             egui::ScrollArea::vertical()
                 .auto_shrink([false; 2])
                 .stick_to_right()

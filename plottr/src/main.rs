@@ -5,10 +5,10 @@
 use anyhow::{anyhow, Result};
 
 use std::ffi::OsString;
-use std::fs::File;
-use std::path::PathBuf;
+
+
 use std::process;
-use std::{env, vec};
+use std::{env};
 
 fn run() -> Result<()> {
     //parse_columns(path)?;
